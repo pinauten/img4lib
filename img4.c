@@ -317,7 +317,7 @@ make_img4(const char *iname, FHANDLE *orig)
 }
 
 static FHANDLE
-replace_img4(const char *iname, const char *replacer, FHANDLE *orig)
+replace_img4(const char *iname, const char *replacer, FHANDLE *orig, int keepCompression)
 {
     size_t total;
     unsigned char xfer[4096];
@@ -331,7 +331,7 @@ replace_img4(const char *iname, const char *replacer, FHANDLE *orig)
         src->close(src);
         return NULL;
     }
-    fd = img4_reopen(*orig, NULL, FLAG_IMG4_SKIP_DECOMPRESSION);
+    fd = img4_reopen(*orig, NULL, keepCompression ? 0 : FLAG_IMG4_SKIP_DECOMPRESSION);
     if (fd) {
         fd->ftruncate(fd, total);
         fd->lseek(fd, 0, SEEK_SET);
@@ -383,7 +383,7 @@ usage(const char *argv0)
     printf("    -E <file>       set epinfo from <file>\n");
     printf("    -N <nonce>      set <nonce> if ticket is set/present\n");
     printf("    -V <version>    set <version>\n");
-    printf("    -R <file>       replace payload\n");
+    printf("    -R[c] <file>    replace payload (c=keep img4 compression)\n");
     printf("    -G <file>       set keybag from file (internal use only)\n");
     printf("    -B <bag> <bag>  create keybag (internal use only)\n");
     printf("    -F              update payload hash in manifest\n");
@@ -422,6 +422,7 @@ main(int argc, char **argv)
     const char *set_manifest = NULL;
     const char *set_version = NULL;
     const char *set_replacer = NULL;
+    int replace_c = 0;
     const char *set_epinfo = NULL;
     const char *set_kb1 = NULL;
     const char *set_kb2 = NULL;
@@ -514,7 +515,7 @@ main(int argc, char **argv)
             case 'V':
                 if (argc >= 2) { set_version = *++argv; argc--; continue; }
             case 'R':
-                if (argc >= 2) { set_replacer = *++argv; argc--; continue; }
+                if (argc >= 2) { set_replacer = *++argv; argc--; replace_c = (!!strchr(arg, 'c')); continue; }
             case 'G':
                 if (argc >= 2) { set_keybag = *++argv; argc--; continue; }
             case 'B':
@@ -567,7 +568,7 @@ main(int argc, char **argv)
         if (!oname) {
             oname = iname;
         }
-        fd = replace_img4(iname, set_replacer, &orig);
+        fd = replace_img4(iname, set_replacer, &orig, replace_c);
     } else if (!oname) {
         fd = img4_reopen(file_open(iname, O_RDWR), k, img4flags);
     } else {
