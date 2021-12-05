@@ -24,11 +24,9 @@ ifneq (,$(wildcard lzfse/build/bin/liblzfse.a))
 CFLAGS += -Ilzfse/src
 LDFLAGS += -Llzfse/build/bin
 else
-ifneq (,$(wildcard /usr/lib/libcompression.dylib))
 # Darwin libcompression is available
 CFLAGS += -DUSE_LIBCOMPRESSION
 LDLIBS = -lcompression
-endif
 endif
 
 SOURCES = \
